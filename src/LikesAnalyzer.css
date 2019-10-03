@@ -1,0 +1,45 @@
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #09d3ac;
+}
+
+.UserImage{
+    left: 0;
+    position: absolute;
+    top: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font: inherit;
+    vertical-align: baseline;
+}
+
+#likesAnalyzeTable
+{
+  text-align: center;
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  border-collapse: collapse;  
+  border: 1px solid #dadada;
+  width: 100%;
+  color: #525252
+}
+
+#likesAnalyzeTable tr:nth-child(even){background-color: #f2f2f2;}
+
+#likesAnalyzeTable th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: center;
+  background-color: #dadada;
+  color: white;
+}
