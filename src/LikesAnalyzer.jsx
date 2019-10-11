@@ -1,41 +1,106 @@
 import React, { Component } from 'react';
-import mainUserImage from './mainUserImage.png'
 import './LikesAnalyzer.css';
-import userImage from './userImage.png'
+import MediaTable from './MediaTable.jsx';
+//import userImage from './userImage.png'
 
 class LikesAnalyzer extends Component {
+
   constructor(props) {
     super(props)
-    this.loadTableData = this.loadTableData.bind(this)
+    this.loadTableData = this.loadTableData.bind(this);
     this.state = {
-      tableData: [{ photo: userImage, username: "user1", countOfPosts: 1 },
-      { photo: userImage, username: "user2", countOfPosts: 3 },
-      { photo: userImage, username: "user3", countOfPosts: 5 }]
+      tableData: [],
+      userData:{name:"", imageLink:"" },
+      isLoadedUserData: false,
+      isLoadedTableData: false,
     };
   }
+
+  componentDidMount(){
+    fetch("https://api.instagram.com/v1/users/self/?access_token=1414873883.eedef0e.001d88c181c54fd8a7d1fa823f239195")
+      .then(res => res.json())
+      .then(json => {
+          this.setState({
+            isLoadedUserData: true,
+            userData: {name:json.data.username, imageLink:json.data.profile_picture}
+          });
+        },
+        (error) => {
+          this.setState({
+            isLoadedUserData: true,
+            error
+          });
+        }
+      )
+  } 
+
   render() {
+
+    var {isLoadedUserData, userData}=this.state;
+
+    if(!isLoadedUserData){
     return (
       <div>
-        <UserHeader />
         <div>
           <NumberPostsToAnalyze />
-          <Table tableData={this.state.tableData} />
+          <MediaTable tableData={this.state.tableData} />
           <button onClick={this.loadTableData}>Analyze</button>
         </div>
       </div>
-    );
+    )}
+    else{
+      return (
+          <div>
+            <UserHeader userImage = {userData.imageLink} userName={userData.name}/>
+            <NumberPostsToAnalyze />
+            <button onClick={this.loadTableData}>Analyze</button>
+            <MediaTable tableData={this.state.tableData} />
+          </div>
+      )
+    }
   }
+ 
 
   loadTableData() {
-    //load data from Instagram
+    fetch("https://api.instagram.com/v1/users/self/media/recent?access_token=1414873883.eedef0e.001d88c181c54fd8a7d1fa823f239195")
+      .then(res => res.json())
+      .then(json => {
+        let recentPostsCount=0;
+        
+          if(document.getElementById("recentPostsCount")!==null){
+            let analyzeNumber=document.getElementById("recentPostsCount").value;
+            recentPostsCount = analyzeNumber>json.data.length? 20: analyzeNumber;
+          }
+
+          this.setState({
+            isLoadedTableData: true,
+            tableData: json.data.map((mediaInfo, index)=>{
+
+              return({
+                picture: mediaInfo.images.thumbnail.url,
+                text: mediaInfo.caption===null? "":mediaInfo.caption.text,
+                likesCount: mediaInfo.likes.count,
+                commentCount: mediaInfo.comments.count
+              })
+            }).splice(0,recentPostsCount)
+          });
+          
+        },
+        (error) => {
+          this.setState({
+            isLoadedTableData: true,
+            error
+          });
+        }
+      )
   }
 }
 
-function UserHeader() {
+function UserHeader(props) {
   return (
     <div id="userHeader">
-      <img src={mainUserImage} className="UserImage" alt="mainUserImage" />
-      <h3>main username</h3>
+      <img src={props.userImage} className="UserImage round" alt="mainUserImage" />
+      <h3>{props.userName}</h3>
     </div>
   )
 }
@@ -44,42 +109,10 @@ function NumberPostsToAnalyze() {
   return (
     <div>
       <p>Choose the number of recent posts to analyze</p>
-      <input type="number" />
+      <input type="number" id="recentPostsCount"/>
     </div>
   )
 }
 
-class Table extends Component {
-  render() {
-    return (
 
-      <table id="likesAnalyzeTable" style={{ marginTop: "20px" }}>
-        <tbody>
-          <tr className="tableTitle">{this.renderTableHeader(this.props.tableData)}</tr>
-          {this.renderTableData(this.props.tableData)}
-        </tbody>
-      </table>
-    )
-  }
-
-  renderTableData() {
-    return this.props.tableData.map((userInfo, index) => {
-      const { photo, username, countOfPosts } = userInfo
-      return (
-        <tr key={index}>
-          <td><img src={photo} alt="userImage"></img></td>
-          <td>{username}</td>
-          <td>{countOfPosts}</td>
-        </tr>
-      )
-    })
-  }
-
-  renderTableHeader() {
-    let header = Object.keys(this.props.tableData[0])
-    return header.map((key, index) => {
-      return <th key={index}>{key.toUpperCase()}</th>
-    })
-  }
-}
 export default LikesAnalyzer;
