@@ -19,7 +19,7 @@ class LikesAnalyzer extends Component {
       userData: { name: "", photo: "" },
       isLoadedUserData: false,
       isLoadedTableData: false,
-      accessToken: "e8dabbbbaa11923c9c6d994d0615ce50e13bcce8483efbfb2ad89e0ce5c7d22e23ff1f44c5d14ed25071d",
+      accessToken: "3d68bef1979ff943278d54c2f0850f814c016527bd326769bab20e0d801ee48f4403163bbf5aa8f8d33a3",
       wallPostsID: [],
       userIDLikesCount: {},
       likesID: [],
