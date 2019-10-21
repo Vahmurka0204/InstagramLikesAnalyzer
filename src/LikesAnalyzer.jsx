@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import './LikesAnalyzer.css';
 import Table from './Table.jsx';
-import jquery from "jquery"
 
 class LikesAnalyzer extends Component {
 
@@ -13,39 +12,40 @@ class LikesAnalyzer extends Component {
     this.getWallPostsLikesInfo = this.getWallPostsLikesInfo.bind(this)
     this.getFriendsData = this.getFriendsData.bind(this)
     this.getTableData = this.getTableData.bind(this)
+    this.addUserData = this.addUserData.bind(this)
 
     this.state = {
       tableData: [],
-      userData: { name: "", photo: "" },
+      userData: { id: "", name: "", photo: "" },
       isLoadedUserData: false,
       isLoadedTableData: false,
-      accessToken: "3d68bef1979ff943278d54c2f0850f814c016527bd326769bab20e0d801ee48f4403163bbf5aa8f8d33a3",
       wallPostsID: [],
       userIDLikesCount: {},
       likesID: [],
       friendsData: {},
-      recentPostsCount:0
+      recentPostsCount: 0
     };
   }
 
   componentDidMount() {
-    let { accessToken } = this.state
-    let link = "https://api.vk.com/method/users.get?fields=photo_100&access_token=" + accessToken + "&v=5.102"
+    const VK = window.VK;
+    VK.Auth.login((response) => this.addUserData(response));
+  }
 
-    jquery.ajax({
-      url: link,
-      method: 'GET',
-      dataType: 'JSONP',
-      success: data => {
+  addUserData(props) {
+    const VK = window.VK;
+    VK.Api.call('users.get', { user_ids: props.session.mid, v: "5.102", fields: "photo_100" }, (r) => {
+      if (r.response) {
         this.setState({
           userData: {
-            name: data.response[0].first_name + " " + data.response[0].last_name,
-            photo: data.response[0].photo_100
+            id: r.response[0].id,
+            name: r.response[0].first_name + " " + r.response[0].last_name,
+            photo: r.response[0].photo_100
           },
           isLoadedUserData: true
         })
       }
-    })
+    });
   }
 
   render() {
@@ -75,42 +75,31 @@ class LikesAnalyzer extends Component {
   }
 
   getWallPostsID() {
-    let { accessToken, recentPostsCount } = this.state
-
-    let link = "https://api.vk.com/method/wall.get?filter=owner&access_token=" + accessToken + "&count=" + recentPostsCount + "&v=5.102";
-    jquery.ajax({
-      url: link,
-      method: 'GET',
-      dataType: 'JSONP',
-      success: data => {
-        this.setState({
-          wallPostsID: data.response.items.map((item) => { return (item.id) })
-        })
-        console.log(data.response.items[0].id)
-      }
-    })
+    const VK = window.VK;
+    let { recentPostsCount } = this.state
+    VK.Api.call('wall.get', { filter: 'owner', count: recentPostsCount, v: '5.102' }, (r) => this.addWallPostsInfo(r))
   }
 
+  addWallPostsInfo(props) {
+    this.setState({
+      wallPostsID: props.response.items.map((item) => { return (item.id) })
+    })
+  }
   getWallPostsLikesInfo() {
-    let { accessToken, wallPostsID } = this.state
+    let { wallPostsID } = this.state
+    const VK = window.VK;
 
     wallPostsID.forEach((postID) => {
-      let link = "https://api.vk.com/method/likes.getList?friends_only=1&access_token=" + accessToken + "&item_id=" + postID + "&type=post&v=5.102";
-
-      jquery.ajax({
-        url: link,
-        method: 'GET',
-        dataType: 'JSONP',
-        success: data => {
-          this.setState({
-            likesID: this.state.likesID.concat(data.response.items.map((id) => { return (id) }))
-          })
-          console.log(data)
-        }
-      })
+      VK.Api.call('likes.getList', { friends_only: 1, item_id: postID, type: 'post', v: '5.102' }, (r) => this.addWallPostsLikesInfo(r))
     });
 
     this.getLikesStatistics();
+  }
+
+  addWallPostsLikesInfo(props) {
+    this.setState({
+      likesID: this.state.likesID.concat(props.response.items.map((id) => { return (id) }))
+    })
   }
 
   getLikesStatistics() {
@@ -132,26 +121,21 @@ class LikesAnalyzer extends Component {
   }
 
   getFriendsData() {
-    let { accessToken } = this.state
-    let link = "https://api.vk.com/method/friends.get?fields=photo_50&access_token=" + accessToken + "&v=5.102"
+    const VK=window.VK
+    VK.Api.call('friends.get', { friends_only: 1, fields:'photo_50', v: '5.102' }, (r) => this.addFriendsData(r))
+        
+  }
+
+  addFriendsData(props){
     let tempFriendsData = {}
-
-    jquery.ajax({
-      url: link,
-      method: 'GET',
-      dataType: 'JSONP',
-      success: data => {
-        data.response.items.forEach(friendInfo => {
-          tempFriendsData[friendInfo.id] = { name: friendInfo.first_name + " " + friendInfo.last_name, photo: friendInfo.photo_50 }
-        })
-      }
-    })
-
+    props.response.items.forEach(friendInfo => {
+      tempFriendsData[friendInfo.id] = { name: friendInfo.first_name + " " + friendInfo.last_name, photo: friendInfo.photo_50 }
+    })    
     this.setState({
       friendsData: tempFriendsData
     })
   }
-  
+
   getTableData() {
     let { userIDLikesCount, recentPostsCount, friendsData } = this.state;
     this.setState({
