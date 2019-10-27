@@ -5,34 +5,24 @@ import Table from './Table.jsx';
 class LikesAnalyzer extends Component {
 
   constructor(props) {
-    super(props)
-    this.getRecentPostsCount = this.getRecentPostsCount.bind(this);
-    this.getLikesStatistics = this.getLikesStatistics.bind(this);
-    this.getWallPostsID = this.getWallPostsID.bind(this);
-    this.getWallPostsLikesInfo = this.getWallPostsLikesInfo.bind(this)
-    this.getFriendsData = this.getFriendsData.bind(this)
-    this.getTableData = this.getTableData.bind(this)
-    this.addUserData = this.addUserData.bind(this)
+    super(props)    
+    this.loadStatistics = this.loadStatistics.bind(this)
 
     this.state = {
       tableData: [],
       userData: { id: "", name: "", photo: "" },
       isLoadedUserData: false,
       isLoadedTableData: false,
-      wallPostsID: [],
-      userIDLikesCount: {},
-      likesID: [],
-      friendsData: {},
-      recentPostsCount: 0
+      recentPostsCount: 0,
     };
   }
 
   componentDidMount() {
     const VK = window.VK;
-    VK.Auth.login((response) => this.addUserData(response));
+    VK.Auth.login((response) => this.setUserData(response));
   }
 
-  addUserData(props) {
+  setUserData(props) {
     const VK = window.VK;
     VK.Api.call('users.get', { user_ids: props.session.mid, v: "5.102", fields: "photo_100" }, (r) => {
       if (r.response) {
@@ -56,56 +46,42 @@ class LikesAnalyzer extends Component {
       <div>
         <UserHeader userData={userData} isLoadedUserData={isLoadedUserData}></UserHeader>
         <NumberPostsToAnalyze />
-        <button onClick={this.getRecentPostsCount}>1 set number of posts</button>
-        <button onClick={this.getWallPostsID}>2 get wall post id</button>
-        <button onClick={this.getWallPostsLikesInfo}>3 get wall post likes info</button>
-        <button onClick={this.getLikesStatistics}>4 get likes statistics</button>
-        <button onClick={this.getFriendsData}>5 get friends data</button>
-        <button onClick={this.getTableData}>6 getTableData</button>
+        <button onClick={this.loadStatistics}>load statistics</button>
         <Table tableData={tableData} isLoadedTableData={isLoadedTableData}></Table>
       </div>
     )
   }
 
-  getRecentPostsCount() {
-    if (document.getElementById("recentPostsCount").value !== null) {
-      let analyzeNumber = document.getElementById("recentPostsCount").value;
-      this.setState({ recentPostsCount: analyzeNumber });
-    }
-  }
-
-  getWallPostsID() {
+  loadStatistics() {
     const VK = window.VK;
-    let { recentPostsCount } = this.state
-    VK.Api.call('wall.get', { filter: 'owner', count: recentPostsCount, v: '5.102' }, (r) => this.addWallPostsInfo(r))
-  }
-
-  addWallPostsInfo(props) {
-    this.setState({
-      wallPostsID: props.response.items.map((item) => { return (item.id) })
+    let getLikesStatisticsPromise = new Promise((resolve, reject) => {
+      resolve(this.getRecentPostsCount())
     })
-  }
-  getWallPostsLikesInfo() {
-    let { wallPostsID } = this.state
-    const VK = window.VK;
+      .then((recentPostsCount) =>
+        new Promise((resolve, reject) => {
+          VK.Api.call('wall.get', { filter: 'owner', count: recentPostsCount, v: '5.102' }, (r) => { resolve(r.response.items.map((item) => item.id)) });
+        }))
+      .then((postsID) =>  this.getLikesStatistics(postsID) );
 
-    wallPostsID.forEach((postID) => {
-      VK.Api.call('likes.getList', { friends_only: 1, item_id: postID, type: 'post', v: '5.102' }, (r) => this.addWallPostsLikesInfo(r))
+    let getFriendsPromise = new Promise((resolve, reject) => {
+    VK.Api.call('friends.get', { friends_only: 1, fields: 'photo_50', v: '5.102' }, (r) => resolve(this.setFriendsData(r)))
     });
 
-    this.getLikesStatistics();
+    Promise.all([getLikesStatisticsPromise, getFriendsPromise]).then((response) => { this.getTableData(response) });
+
   }
 
-  addWallPostsLikesInfo(props) {
+  getRecentPostsCount() {
     this.setState({
-      likesID: this.state.likesID.concat(props.response.items.map((id) => { return (id) }))
-    })
+      recentPostsCount: document.getElementById("recentPostsCount").value
+    });
+    return document.getElementById("recentPostsCount").value;
   }
 
-  getLikesStatistics() {
-    let { likesID } = this.state;
-    let tempLikesStatistics = {}
+  makeLikesStatistics(response) {
 
+    let tempLikesStatistics = {}
+    let likesID= response.flat();
     likesID.forEach((id) => {
       if (tempLikesStatistics[id] === undefined) {
         tempLikesStatistics[id] = 1;
@@ -113,38 +89,38 @@ class LikesAnalyzer extends Component {
       else {
         tempLikesStatistics[id]++;
       }
-    })
+    });
 
-    this.setState({
-      userIDLikesCount: tempLikesStatistics
-    })
+    console.log(tempLikesStatistics);
+    return tempLikesStatistics;    
   }
 
-  getFriendsData() {
-    const VK=window.VK
-    VK.Api.call('friends.get', { friends_only: 1, fields:'photo_50', v: '5.102' }, (r) => this.addFriendsData(r))
-        
+
+  getLikesStatistics(postsID){
+    const VK = window.VK;
+    let vkAPICallPromise= postsID.map((postID)=>new Promise((resolve,reject)=>{VK.Api.call('likes.getList', { friends_only: 1, item_id: postID, type: 'post', v: '5.102' }, (r) => resolve(r.response.items))}));
+    return Promise.all(vkAPICallPromise).then((response)=>new Promise((resolve, reject) => {resolve(this.makeLikesStatistics(response))}))
   }
 
-  addFriendsData(props){
+  setFriendsData(r) {
     let tempFriendsData = {}
-    props.response.items.forEach(friendInfo => {
+    r.response.items.forEach(friendInfo => {
       tempFriendsData[friendInfo.id] = { name: friendInfo.first_name + " " + friendInfo.last_name, photo: friendInfo.photo_50 }
-    })    
-    this.setState({
-      friendsData: tempFriendsData
     })
+    return tempFriendsData;
   }
 
-  getTableData() {
-    let { userIDLikesCount, recentPostsCount, friendsData } = this.state;
+  getTableData(response) {
+    let likesStatistics= response[0]
+    let friendsData=response[1];
+    let { recentPostsCount } = this.state;
     this.setState({
-      tableData: Object.keys(userIDLikesCount).map((userID) => {
+      tableData: Object.keys(likesStatistics).map((userID) => {
         return (
           {
             photo: friendsData[userID].photo,
             name: friendsData[userID].name,
-            statistics: userIDLikesCount[userID] + "/" + recentPostsCount
+            statistics: likesStatistics[userID] + "/" + recentPostsCount
           }
         )
       }),

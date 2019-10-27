@@ -23,7 +23,7 @@ class Table extends Component {
         const {name,photo, statistics } = userInfo
         return (
           <tr key={index}>
-            <td><img src={photo} alt="userImage"></img></td>
+            <td><img src={photo} alt="userImage"  className="tablePicture round"></img></td>
             <td>{name}</td>
             <td>{statistics}</td>
           </tr>
