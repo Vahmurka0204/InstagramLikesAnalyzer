@@ -1,0 +1,26 @@
+.table {
+  text-align: center;
+  font-family: Arial;
+  border-collapse: collapse;
+  border: 1px solid #dadada;
+  width: 100%;
+  color: #525252
+}
+
+.table__row:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.table__header {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: center;
+  background-color: #dadada;
+  color: white;
+}
+
+.table__image {
+  width: 40px;
+  height: 40px;
+  border-radius: 100px;
+}
