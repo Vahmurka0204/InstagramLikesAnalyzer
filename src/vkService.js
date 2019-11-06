@@ -9,7 +9,7 @@ class VKService {
             user_ids: id,
             v: "5.102",
             fields: "photo_100"
-        }, (r) => setUserData(r.response[0]));
+        }, (r) => setUserData(r.response[0].first_name, r.response[0].last_name, r.response[0].photo_100 ));
     }
 
     GetWallPostsID(recentPostsCount) {
@@ -58,8 +58,7 @@ class VKService {
                 type: 'post',
                 v: '5.102'
             }, (r) => {
-                resolve(this.makeLikesID(r));
-                
+                resolve(this.makeLikesID(r));                
             });
         })
     }

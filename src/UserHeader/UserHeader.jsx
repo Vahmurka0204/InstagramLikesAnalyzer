@@ -28,14 +28,13 @@ class UserHeader extends Component {
         </div>)
     }
 
-    setUserData = (response) => {
-        if (response) {
-            this.setState({
-                userName: response.first_name + " " + response.last_name,
-                userPhoto: response.photo_100
-            })
-        }
+    setUserData = (name, surname, photo) => {
+        this.setState({
+            userName: name + " " + surname,
+            userPhoto: photo
+        })
     }
+
 }
 
 export default UserHeader;

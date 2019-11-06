@@ -2,12 +2,6 @@ import VKService from './vkService';
 
 class Loader {
 
-  constructor() {
-    this.postsID = [];
-    this.likesStatistics = {};
-    this.friendsData = {};
-  }
-
   CreateTable(recentPostsCount, setTableData) {
     const vkService = new VKService();
     let getLikesStatisticsPromise = vkService.GetWallPostsID(recentPostsCount)
@@ -17,9 +11,7 @@ class Loader {
     Promise.all([getLikesStatisticsPromise, getFriendsPromise]).then((response) => {
       setTableData(this.getTableData(response, recentPostsCount))
     }).catch(e => console.error(e));
-
   }
-
 
   getLikesStatistics = (postsID) => {
     const vkService = new VKService();
