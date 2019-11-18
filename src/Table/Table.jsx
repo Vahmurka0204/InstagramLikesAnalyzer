@@ -1,21 +1,21 @@
-import React, { Component } from 'react';
+import React from 'react';
 import './Table.css';
 
-class Table extends Component {
-  render() {
-    const { tableData } = this.props;
-    if (tableData.length === 0) {
-      return (<div> no one likes your posts :(</div>)
-    }
-    return (
-      <table className='table'>
-        <tbody>
-          <TableHeader />
-          <TableBody tableData={tableData} />
-        </tbody>
-      </table>
-    )
+function Table(props) {
+  const { tableData } = props;
+
+  if (tableData.length === 0) {
+    return (<div> no one likes your posts :(</div>)
   }
+  
+  return (
+    <table className='table'>
+      <tbody>
+        <TableHeader />
+        <TableBody tableData={tableData} />
+      </tbody>
+    </table>
+  )
 }
 
 function TableHeader() {
@@ -30,7 +30,7 @@ function TableHeader() {
 
 function TableBody(props) {
   const { tableData } = props;
-  
+
   return tableData.map((userInfo) => {
     const { name, photo, statistics } = userInfo;
     return (

@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import './LikesAnalyzer.css';
 import Table from '../Table/Table.jsx';
 import VKService from '../vkService.js';
@@ -7,58 +7,38 @@ import Loader from '../Loader.js';
 import InputRecentPostsCount from '../InputRecentPostsCount/InputRecentPostsCount';
 
 
-class LikesAnalyzer extends Component {
+function LikesAnalyzer() {
 
-  constructor(props) {
-    super(props)
+  const [tableData, setTableData] = useState([]);
+  const [isLogin, setIsLogin] = useState(false);
+  const [isLoadedTableData, setIsLoadedTableData] = useState(false);
+  const [recentPostsCount, setRecentPostsCount] = useState(0);
+  const [id, setID] = useState('');
 
-    this.state = {
-      tableData: [],
-      isLogin: false,
-      isLoadedTableData: false,
-      recentPostsCount: 0,
-      id: ''
-    };
-  }
 
-  render() {
-    let { isLogin, isLoadedTableData, tableData, id } = this.state;
-
-    return (
-      <div>
-        {isLogin && <UserHeader id={id}></UserHeader>}
-        <InputRecentPostsCount onInputChange={this.setRecentPostsCount} />
-        <button onClick={this.loadStatistics}>load statistics</button>
-        {isLoadedTableData && <Table tableData={tableData}></Table>}
-      </div>
-    )
-  }
-
-  componentDidMount() {
+  useEffect(() => {
     const vkService = new VKService();
-    vkService.Login(this.setUserID);
-  }
+    vkService.Login((id) => { setID(id); setIsLogin(true) });
+  }, []);
 
-  setUserID = (id) => {
-    this.setState({
-      id,
-      isLogin: true
-    })
-  }
-
-  setRecentPostsCount = (e) => {
-    this.setState({ recentPostsCount: e.target.value })
-  }
-
-  loadStatistics = () => {
-    const { recentPostsCount } = this.state
+ const loadStatistics = () => {
     const loader = new Loader();
-    loader.CreateTable(recentPostsCount, this.setTableData);
+    loader.CreateTable(recentPostsCount, setData);
   }
 
-  setTableData = (tableData) => {
-    this.setState({ tableData, isLoadedTableData: true })
+  const setData = (tableData) => {
+    setTableData(tableData);
+    setIsLoadedTableData(true);
   }
+
+  return (
+    <div>
+      {isLogin && <UserHeader id={id}></UserHeader>}
+      <InputRecentPostsCount onInputChange={(e) => { setRecentPostsCount(e.target.value) }} />
+      <button onClick={loadStatistics}>load statistics</button>
+      {isLoadedTableData && <Table tableData={tableData}></Table>}
+    </div>
+  )
 }
 
 export default LikesAnalyzer;
